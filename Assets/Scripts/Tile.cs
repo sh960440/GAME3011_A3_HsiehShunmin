@@ -24,7 +24,7 @@ public class Tile : MonoBehaviour
 		isSelected = true;
 		render.color = selectedColor;
 		previousSelected = gameObject.GetComponent<Tile>();
-		//SFXManager.instance.PlaySFX(Clip.Select);
+		BoardManager.instance.selectSound.Play();
 	}
 
 	private void Deselect() 
@@ -55,6 +55,7 @@ public class Tile : MonoBehaviour
 				if (GetAllAdjacentTiles().Contains(previousSelected.gameObject)) // Check if the previousSelected game object is in the returned adjacent tiles list
 				{
 					Debug.Log("Is an adjacent tile");
+					UIManager.instance.MoveCounter--; // Decrement MoveCounter every time a sprite is swapped
 					SwapSprite(previousSelected.render); // Swap the sprite of the tile
 					previousSelected.ClearAllMatches();
 					previousSelected.Deselect(); // If it wasn't the first one that was selected, deselect all tiles
@@ -72,12 +73,10 @@ public class Tile : MonoBehaviour
 
 	public void SwapSprite(SpriteRenderer render2) 
 	{
-		//if (render.sprite == render2.sprite) return; // Check render2 against the SpriteRenderer of the current tile
-
 		Sprite tempSprite = render2.sprite; // Create a tempSprite to hold the sprite of render2
 		render2.sprite = render.sprite; // Swap out the second sprite by setting it to the first
 		render.sprite = tempSprite; // Swap out the first sprite by setting it to the second
-		//SFXManager.instance.PlaySFX(Clip.Swap); // Play a sound effect
+		BoardManager.instance.swapSound.Play();
 	}
 
 	private GameObject GetAdjacent(Vector2 castDir) // Retrieve a single adjacent tile by sending a raycast in the target specified by castDir
@@ -142,8 +141,7 @@ public class Tile : MonoBehaviour
 			matchFound = false; // Reset matchFound to false
 			StopCoroutine(BoardManager.instance.FindNullTiles()); // Stop the FindNullTiles coroutine and start it again from the start
 			StartCoroutine(BoardManager.instance.FindNullTiles());
-			//SFXManager.instance.PlaySFX(Clip.Clear); // Play a sound effect
-			GUIManager.instance.MoveCounter--; // Decrement MoveCounter every time a sprite is swapped
+			BoardManager.instance.clearSound.Play();
 		}
 	}
 }

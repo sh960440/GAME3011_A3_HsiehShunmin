@@ -4,22 +4,44 @@ using System.Collections.Generic;
 
 public class BoardManager : MonoBehaviour 
 {
-	public static BoardManager instance; // Singleton
-	public List<Sprite> characters = new List<Sprite>(); // A list of sprites used as tile pieces.
-	public GameObject tile; // The prefab instantiated when creating the board
-	public int xSize, ySize; // X and Y dimensions of the board.
+	public static BoardManager instance;
+	[Header("Animal Sprites")]
+	public List<Sprite> allAnimals = new List<Sprite>(); // A list of sprites used as tile pieces
+	public List<Sprite> animalsInThisRound;
+
+	[Header("Tile Generation")]
+	public GameObject tile;
+	public int xSize, ySize;
 
 	private GameObject[,] tiles; // Used to store the tiles in the board
 
 	public bool IsShifting { get; set; } // Tell the game when a match is found and the board is re-filling
 
-	void Start () 
+	[Header("Sound Effects")]
+	public AudioSource selectSound;
+	public AudioSource swapSound;
+	public AudioSource clearSound;
+
+	void Start() 
 	{
 		instance = GetComponent<BoardManager>(); // Sets the singleton with reference of the BoardManager
+    }
 
+	public void StartNewGame(int count)
+	{
+		animalsInThisRound = new List<Sprite>(allAnimals);
+		
+		if (count >= 0)
+		{
+			for (int i = 0; i < count; i++)
+			{
+				animalsInThisRound.Remove(animalsInThisRound[animalsInThisRound.Count-1]);
+			}
+		} 	
+		
 		Vector2 offset = tile.GetComponent<SpriteRenderer>().bounds.size;
         CreateBoard(offset.x, offset.y);
-    }
+	}
 
 	private void CreateBoard (float xOffset, float yOffset) {
 		tiles = new GameObject[xSize, ySize]; // The 2D array tiles gets initialized
@@ -43,7 +65,7 @@ public class BoardManager : MonoBehaviour
 				newTile.transform.parent = transform; // Parent all the tiles to BoardManager
 				
 				List<Sprite> possibleCharacters = new List<Sprite>(); // Create a list of possible characters for this sprite
-				possibleCharacters.AddRange(characters); // Add all characters to the list
+				possibleCharacters.AddRange(animalsInThisRound); // Add all characters to the list
 				
 				// Remove the characters that are on the left and below the current sprite from the list
 				possibleCharacters.Remove(previousLeft[y]);
@@ -59,7 +81,7 @@ public class BoardManager : MonoBehaviour
 
 	public IEnumerator FindNullTiles() 
 	{
-		// loop through the entire board in search of tile pieces with null sprites
+		// Loop through the entire board in search of tile pieces with null sprites
 		for (int x = 0; x < xSize; x++) 
 		{
 			for (int y = 0; y < ySize; y++) 
@@ -100,7 +122,7 @@ public class BoardManager : MonoBehaviour
 
 		for (int i = 0; i < nullCount; i++) // Loop again to begin the actual shifting
 		{
-			GUIManager.instance.Score += 50;
+			UIManager.instance.Score += 5;
 			yield return new WaitForSeconds(shiftDelay); // Pause for shiftDelay seconds
 			for (int k = 0; k < renders.Count - 1; k++) // Loop through every SpriteRenderer in the list of renders
 			{
@@ -113,10 +135,9 @@ public class BoardManager : MonoBehaviour
 
 	private Sprite GetNewSprite(int x, int y) 
 	{
-		List<Sprite> possibleCharacters = new List<Sprite>(); // A list of possible characters the sprite could be filled with
-		possibleCharacters.AddRange(characters);
+		List<Sprite> possibleCharacters = new List<Sprite>();
+		possibleCharacters.AddRange(animalsInThisRound);
 		
-		// Make sure it doesn't go out of bounds
 		if (x > 0) 
 		{
 			possibleCharacters.Remove(tiles[x - 1, y].GetComponent<SpriteRenderer>().sprite); // Remove possible duplicates that could cause an accidental match
@@ -131,5 +152,14 @@ public class BoardManager : MonoBehaviour
 		}
 
 		return possibleCharacters[Random.Range(0, possibleCharacters.Count)]; // Return a random sprite from the possible sprite list
+	}
+
+	public static void ClearBoard()
+	{
+		Tile[] tiles = FindObjectsOfType<Tile>();
+		foreach(Tile tile in tiles)
+		{
+			Destroy(tile.gameObject);			
+		}
 	}
 }
